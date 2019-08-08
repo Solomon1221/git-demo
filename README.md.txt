@@ -2,11 +2,6 @@
 
 This is the first file in this repo. 
 
-## Website
-
-Here are hte files in the website.
+## Website Contents
 
 1.index.html
-
-
-
