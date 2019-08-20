@@ -1,0 +1,961 @@
+package com.mygdx.game.game;
+
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
+import com.mygdx.game.config.GameConfig;
+
+public class GhostController {
+    public float direction = 1;
+    public boolean isUp;
+    public boolean isDown;
+    public boolean isRight;
+    public boolean isLeft;
+
+    public boolean canMoveUp;
+    public boolean canMoveDown;
+    public boolean canMoveRight;
+    public boolean canMoveLeft;
+
+    public boolean stayStraight;
+
+    public boolean isStop;
+
+    public boolean antenaFlag;
+
+    public Ghost ghost;
+    public GhostInner ghostInner;
+
+    public GameRenderer gameRenderer;
+
+    public boolean flag;
+
+    public float counterDown;
+    public float counterDown2;
+    public float counterDown3;
+    public float counterDown4;
+
+
+    public float counterUp;
+    public float counterUp2;
+    public float counterUp3;
+    public float counterUp4;
+
+    public float counterRight;
+    public float counterRight2;
+    public float counterRight3;
+    public float counterRight4;
+
+    public float counterLeft;
+    public float counterLeft2;
+    public float counterLeft3;
+    public float counterLeft4;
+
+    PacManInner pac;
+
+    public float timer;
+
+    // that way you can just comment out method calls
+    // and get back to start
+    public AI ai;
+
+    // direction 1 = right, 2 = down, 3 = left, 4 = up
+
+
+    // maybe pass direction to constructor
+    public GhostController(GameRenderer gameRenderer, PacManInner pac) {
+        this.pac = pac;
+        this.gameRenderer = gameRenderer;
+        this.ai = new AI(gameRenderer);
+    }
+
+    // in order to get back to beginning comment out threes and fours and go with right and left only, or whatever.
+
+    public void moveGhosts(float delta, ShapeRenderer renderer) {
+        canMoveRight = false;
+        canMoveLeft = false;
+        canMoveDown = false;
+        canMoveUp = false;
+        stayStraight = false;
+
+        timer += delta;
+        if (timer >= 2.5) {
+            System.out.println("Times up!");
+            timer = 0;
+        }
+        float rand = MathUtils.random(1, 4);
+        for (int i = 0; i < gameRenderer.getGhosts().size(); i++) {
+            ghost = gameRenderer.getGhosts().get(i);
+            ghostInner = gameRenderer.getGhostsInner().get(i);
+
+
+            if (gameRenderer.ghosts.get(i).getDirection() == 1) {
+                float x = ghost.getX();
+                ghost.setPosition(x += delta * 5, ghost.getY());
+                ghostInner.setPosition(ghost.getX() + ghostInner.getWidth() / 2, ghost.getY() + ghostInner.getHeight() / 2);
+
+                DownAntena downAntena = new DownAntena();
+                downAntena.setPosition(ghostInner.getX(), ghostInner.getY() - ghostInner.getHeight() * 2);
+                downAntena.setSize(1, 3);
+                ghost.setDownAntena(downAntena);
+
+                UpAntena upAntena = new UpAntena();
+                upAntena.setPosition(ghostInner.getX(), ghostInner.getY());
+                upAntena.setSize(1, 3);
+                ghost.setUpAntena(upAntena);
+
+                LeftAntena leftAntena = new LeftAntena();
+                leftAntena.setPosition(ghostInner.getX() - ghost.getWidth(), ghostInner.getY());
+                leftAntena.setSize(5, 1);
+                ghost.setLeftAntena(leftAntena);
+
+                renderer.rect(downAntena.getX(), downAntena.getY(), downAntena.getWidth(), downAntena.getHeight());
+//
+                renderer.rect(upAntena.getX(), upAntena.getY(), upAntena.getWidth(), upAntena.getHeight());
+
+
+//                LeftAntena leftAntena = ghost.getLeftAntena();
+
+                // might be off center
+//                leftAntena.setPosition(ghostInner.getX() - 2, ghostInner.getY());
+
+                direction = 1;
+                isRight = true;
+
+                isLeft = false;
+                isUp = false;
+                isDown = false;
+                // use gethorizontal walls and see if hitting wall, the have boolean is stopRight, etc.
+
+//                boolean isOverlaps = gameRenderer.getHorizontalWalls().get(h).getBounds().overlaps(ghostInner.getBounds());
+//                boolean isToLeft = ghostInner.getX() < gameRenderer.getHorizontalWalls().get(h).getX()
+
+
+                // note that you might only need isoverlaps, not
+                // is toleft
+                for (int h = 0; h < gameRenderer.getHorizontalWalls().size - 1; h++) {
+                    boolean isOverlaps = gameRenderer.getHorizontalWalls().get(h).getBounds().overlaps(ghostInner.getBounds());
+                    boolean isToLeft = ghostInner.getX() < gameRenderer.getHorizontalWalls().get(h).getX();
+
+
+                    if (ghostInner.getX() + ghostInner.getWidth() >= GameConfig.WORLD_WIDTH - 17) {
+
+                        float random = MathUtils.random(1, 4);
+
+                        gameRenderer.getGhosts().get(i).setDirection(random);
+                        gameRenderer.getGhostsInner().get(i).setDirection(random);
+
+
+                    }
+
+                    if (gameRenderer.getGhostsInner().get(i).getX() < 7 || gameRenderer.getGhostsInner().get(i).getX() > GameConfig.WORLD_WIDTH - 20) {
+                        counterRight = 1;
+                        counterRight2 = 1;
+
+                    }
+
+                    // if greater than or less than set others equal to one, otherwise it will just keep going back and forth
+
+                    if (gameRenderer.getGhostsInner().get(i).getY() >= 24 || gameRenderer.getGhostsInner().get(i).getY() < 5) {
+                        counterRight3 = 1;
+                        counterRight4 = 1;
+                    }
+
+
+                    // best way to do it is four different antenas for four different directions
+                    // this is it
+                    // at first create two, and then four
+                    // with two you can test it
+                    // also save before change
+                    // start with this one and test it, then do the other directions
+                    // don't change down antena, that way will leave working model
+
+// old code
+//                    if (downAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getY() < 27) {
+//                        //System.out.println("Overlaps!");
+//                        // down
+//
+//                        counterRight++;
+//                    }
+//                    if (downAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getY() > 3) {
+//                        //System.out.println("Overlaps!");
+//                        // up
+//
+//                        counterRight2++;
+//                    }
+
+                    if (downAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getY() > 3) {
+                        //System.out.println("Overlaps!");
+                        // down
+                        System.out.println("hit");
+
+                        counterRight++;
+                        System.out.println(counterRight);
+                        System.out.println("Print1" + gameRenderer.getHorizontalWalls().get(h).getY());
+                    }
+//
+                    if (upAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getY() < 27) {
+                        //System.out.println("Overlaps!");
+                        // up
+
+                        System.out.println("Print2" + gameRenderer.getHorizontalWalls().get(h).getY());
+
+                        counterRight2++;
+                    }
+
+                    // reset stay straight true at beginning of each method turn
+
+                    // get right antena
+//
+//                    if (downAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getX() < GameConfig.WORLD_WIDTH - 17 && ghostInner.getX() < gameRenderer.getHorizontalWalls().get(h).getX()) {
+//                        // go straight
+//
+//                        counterRight3++;
+//                    } else if (downAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getX() > 6) {
+//                        // don't do shit, but would turn right
+//
+//                        counterRight4++;
+//                    }
+
+                    // could easily comment out if statement, how to test as small part
+
+                    // separate if statement for right and left
+
+                    // remember to label right and left feelers
+
+
+                }
+
+                // could put four directions, and else if with greater than, less than
+
+
+                // in else put boolean canmove, then have decision making process
+                // add four directions and canmove boolean
+
+
+                if (counterRight >= 1) {
+
+                  //  canMoveRight = true;
+
+                    stayStraight = true;
+//                    gameRenderer.getGhosts().get(i).setDirection(1);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(1);
+                } else {
+                    canMoveDown = true;
+//                    gameRenderer.getGhosts().get(i).setDirection(2);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(2);
+
+                    // got to reset direction boolean at top of method think this through
+
+                }
+
+
+                //  if(gameRenderer.getGhosts().get(i).getY() < 15) {
+                if (counterRight2 >= 1) {
+                   // canMoveRight = true;
+                    stayStraight = true;
+//                       gameRenderer.getGhosts().get(i).setDirection(1);
+//                       gameRenderer.getGhostsInner().get(i).setDirection(1);
+                } else {
+
+                    canMoveUp = true;
+//                       gameRenderer.getGhosts().get(i).setDirection(4);
+//                       gameRenderer.getGhostsInner().get(i).setDirection(4);
+                }
+                //  }
+
+
+
+//                if (canMoveDown) {
+//                    gameRenderer.getGhosts().get(i).setDirection(2);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(2);
+//                }
+//                if (canMoveUp) {
+//                    gameRenderer.getGhosts().get(i).setDirection(4);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(4);
+//                }
+//                if (stayStraight) {
+//                    gameRenderer.getGhosts().get(i).setDirection(1);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(1);
+//                }
+
+
+                // next do with right
+                // then with up and down
+                // then figure out way to test the other ones
+
+//
+//                if (counterRight3 >= 1) {
+//
+//                } else {
+//
+//                    canMoveRight = true;
+//
+//                }
+//
+//                if (counterRight4 >= 1) {
+//
+//                } else {
+//                    canMoveLeft = true;
+//
+//                }
+
+                // make it go straight back when hits wall
+                // ps, doesn't matter if it goes behind it
+
+//                if (gameRenderer.getGhostsInner().get(i).getX() < 7 || gameRenderer.getGhostsInner().get(i).getX() > GameConfig.WORLD_WIDTH - 15) {
+//                    counterRight = 1;
+//                    counterRight2 = 1;
+//                    canMoveUp = false;
+//                    canMoveDown = false;
+//
+//                }
+//
+//                // if greater than or less than set others equal to one, otherwise it will just keep going back and forth
+//
+//                if (gameRenderer.getGhostsInner().get(i).getY() >= 24 || gameRenderer.getGhostsInner().get(i).getY() < 5) {
+//                    counterRight3 = 1;
+//                    counterRight4 = 1;
+//                    canMoveRight = false;
+//                    canMoveLeft = false;
+//                }
+
+                counterRight = 0;
+
+                counterRight2 = 0;
+
+                counterRight3 = 0;
+
+                counterRight4 = 0;
+
+                stayStraight = false;
+                canMoveRight = false;
+                canMoveDown = false;
+                canMoveUp = false;
+                canMoveLeft = false;
+//
+//                if (canMoveDown) {
+//                    gameRenderer.getGhosts().get(i).setDirection(2);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(2);
+//                } else if (canMoveUp) {
+//                    gameRenderer.getGhosts().get(i).setDirection(4);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(4);
+//                } else{
+//                    gameRenderer.getGhosts().get(i).setDirection(1);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(1);
+//                }
+
+//                if(canMoveDown && pac.getY() < ghostInner.getY()){
+//                    gameRenderer.getGhosts().get(i).setDirection(2);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(2);
+//                } else if(canMoveUp && pac.getY() > ghostInner.getY()){
+//                    gameRenderer.getGhosts().get(i).setDirection(4);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(4);
+//                } else if(canMoveRight && pac.getX() > ghostInner.getX()){
+//                    gameRenderer.getGhosts().get(i).setDirection(1);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(1);
+//                } else if(canMoveLeft && pac.getX() < ghostInner.getX()){
+//                    gameRenderer.getGhosts().get(i).setDirection(3);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(3);
+//                }
+
+
+            }
+
+            if (gameRenderer.getGhosts().get(i).getDirection() == 2) {
+                float x = ghost.getX();
+                float y = ghost.getY();
+                ghost.setPosition(x, y -= delta * 5);
+                ghostInner.setPosition(ghost.getX() + ghostInner.getWidth() / 2, ghost.getY() + ghostInner.getHeight() / 2);
+                LeftAntena leftAntena = new LeftAntena();
+                leftAntena.setPosition(ghostInner.getX() - ghost.getWidth(), ghostInner.getY());
+                leftAntena.setSize(3, 1);
+                ghost.setLeftAntena(leftAntena);
+
+                RightAntena rightAntena = new RightAntena();
+                rightAntena.setPosition(ghostInner.getX(), ghostInner.getY());
+                rightAntena.setSize(3, 1);
+                ghost.setRightAntena(rightAntena);
+
+                DownAntena downAntena = new DownAntena();
+                downAntena.setPosition(ghostInner.getX(), ghostInner.getY() - ghostInner.getHeight() * 2);
+                downAntena.setSize(1, 5);
+                ghost.setDownAntena(downAntena);
+
+
+                renderer.rect(leftAntena.getX(), leftAntena.getY(), leftAntena.getWidth(), leftAntena.getHeight());
+                renderer.rect(rightAntena.getX(), rightAntena.getY(), rightAntena.getWidth(), rightAntena.getHeight());
+
+                for (int h = 0; h < gameRenderer.getHorizontalWalls().size - 1; h++) {
+                    boolean isOverlaps = gameRenderer.getHorizontalWalls().get(h).getBounds().overlaps(ghostInner.getBounds());
+                    boolean isToLeft = ghostInner.getX() < gameRenderer.getHorizontalWalls().get(h).getX();
+
+                    // what this is saying is if this doesn't overlap with all walls
+
+
+                    if (ghostInner.getY() <= 4) {
+
+//                        !leftAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(i).getBounds())
+
+                        float random = MathUtils.random(1, 4);
+
+                        gameRenderer.getGhosts().get(i).setDirection(random);
+                        gameRenderer.getGhostsInner().get(i).setDirection(random);
+
+
+                    }
+
+
+                    // come back and study this code in depth before you move on
+                    if (gameRenderer.getGhostsInner().get(i).getY() > 24) {
+                        counterDown = 1;
+                        counterDown2 = 1;
+                    }
+
+
+                    if (gameRenderer.getGhostsInner().get(i).getX() < 7 || gameRenderer.getGhostsInner().get(i).getX() > GameConfig.WORLD_WIDTH - 15) {
+                        counterDown3 = 1;
+                        counterDown4 = 1;
+
+                    }
+
+                    // if greater than or less than set others equal to one, otherwise it will just keep going back and forth
+
+                    if (gameRenderer.getGhostsInner().get(i).getY() >= 24 || gameRenderer.getGhostsInner().get(i).getY() < 5) {
+                        counterDown = 1;
+                        counterDown2 = 1;
+                    }
+
+                    // this will turn into counterDown left, counterDown2 right
+                    // have to also test for greater than less than getx +- something
+
+
+                    if (leftAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getX() > 5) {
+                        //System.out.println("Overlaps!");
+                        // left
+                        counterDown++;
+                    }
+                    if (rightAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getX() < GameConfig.WORLD_WIDTH - 16) {
+                        //System.out.println("Overlaps!");
+                        // right
+                        counterDown2++;
+                    }
+
+                    if (leftAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getY() > 5 && ghostInner.getY() + .5 > gameRenderer.getHorizontalWalls().get(h).getY()) {
+                        //System.out.println("Overlaps!");
+                        // down, keep straight
+                        counterDown3++;
+                    } else if (leftAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getY() <= 24) {
+                        //System.out.println("Overlaps!");5
+                        // up, but won't do shit
+                        counterDown4++;
+                    }
+
+
+                }
+
+                // somehow this code is interfering
+
+                // potentially put else if times up
+
+                if (counterDown >= 1) {
+                  //  canMoveDown = true;
+                    stayStraight = true;
+                } else {
+
+                    canMoveLeft = true;
+
+                }
+
+                if (counterDown2 >= 1) {
+                   // canMoveDown = true;
+                    stayStraight = true;
+                } else {
+
+                    canMoveRight = true;
+
+                }
+
+//                if (counterDown3 >= 1) {
+//
+//                } else {
+//
+//                    canMoveDown = true;
+//                }
+//
+//                if (counterDown4 >= 1) {
+//
+//                } else {
+//                    canMoveUp = true;
+//                }
+
+
+                if (canMoveRight) {
+                    gameRenderer.getGhosts().get(i).setDirection(1);
+                    gameRenderer.getGhostsInner().get(i).setDirection(1);
+                }
+                if (canMoveLeft) {
+                    gameRenderer.getGhosts().get(i).setDirection(3);
+                    gameRenderer.getGhostsInner().get(i).setDirection(3);
+                }
+                if (stayStraight) {
+                    gameRenderer.getGhosts().get(i).setDirection(2);
+                    gameRenderer.getGhostsInner().get(i).setDirection(2);
+                }
+
+                counterDown = 0;
+
+                counterDown2 = 0;
+
+                counterDown3 = 0;
+
+                counterDown4 = 0;
+                stayStraight = false;
+                canMoveRight = false;
+                canMoveDown = false;
+                canMoveUp = false;
+                canMoveLeft = false;
+
+//                if(canMoveDown && pac.getY() < ghostInner.getY()){
+//                    gameRenderer.getGhosts().get(i).setDirection(2);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(2);
+//                } else if(canMoveUp && pac.getY() > ghostInner.getY()){
+//                    gameRenderer.getGhosts().get(i).setDirection(4);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(4);
+//                } else if(canMoveRight && pac.getX() > ghostInner.getX()){
+//                    gameRenderer.getGhosts().get(i).setDirection(1);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(1);
+//                } else if(canMoveLeft && pac.getX() < ghostInner.getX()){
+//                    gameRenderer.getGhosts().get(i).setDirection(3);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(3);
+//                }
+
+//                timer += delta;
+//                if (timer >= 5) {
+//                    System.out.println("Times up!");
+//                    timer = 0;
+//                }
+
+
+            }
+
+            if (gameRenderer.getGhosts().get(i).getDirection() == 3) {
+                float x = ghost.getX();
+                float y = ghost.getY();
+                ghost.setPosition(x -= delta * 5, y);
+                ghostInner.setPosition(ghost.getX() + ghostInner.getWidth() / 2, ghost.getY() + ghostInner.getHeight() / 2);
+
+                DownAntena downAntena = new DownAntena();
+                downAntena.setPosition(ghostInner.getX(), ghostInner.getY() - ghostInner.getHeight() * 2);
+                downAntena.setSize(1, 3);
+                ghost.setDownAntena(downAntena);
+
+                UpAntena upAntena = new UpAntena();
+                upAntena.setPosition(ghostInner.getX(), ghostInner.getY());
+                upAntena.setSize(1, 3);
+                ghost.setUpAntena(upAntena);
+
+                LeftAntena leftAntena = new LeftAntena();
+                leftAntena.setPosition(ghostInner.getX() - ghost.getWidth(), ghostInner.getY());
+                leftAntena.setSize(5, 1);
+                ghost.setLeftAntena(leftAntena);
+
+                renderer.rect(upAntena.getX(), upAntena.getY(), upAntena.getWidth(), upAntena.getHeight());
+                renderer.rect(downAntena.getX(), downAntena.getY(), downAntena.getWidth(), downAntena.getHeight());
+
+
+                for (int h = 0; h < gameRenderer.getHorizontalWalls().size - 1; h++) {
+                    boolean isOverlaps = gameRenderer.getHorizontalWalls().get(h).getBounds().overlaps(ghostInner.getBounds());
+                    boolean isToLeft = ghostInner.getX() < gameRenderer.getHorizontalWalls().get(h).getX();
+
+                    // I think what is happening is it keeps overlapping at each possibility
+                    // until it has to move one way
+
+                    // maybe put stop in there like pacman has so it won't walk through walls
+
+                    if (ghostInner.getX() >= GameConfig.WORLD_WIDTH - 17 || ghostInner.getX() < 6) {
+
+                        float random = MathUtils.random(1, 4);
+
+                        gameRenderer.getGhosts().get(i).setDirection(random);
+                        gameRenderer.getGhostsInner().get(i).setDirection(random);
+
+
+                    }
+
+                    if (gameRenderer.getGhostsInner().get(i).getX() < 7 || gameRenderer.getGhostsInner().get(i).getX() > GameConfig.WORLD_WIDTH - 20) {
+                        counterLeft = 1;
+                        counterLeft2 = 1;
+
+                    }
+
+                    // copy this and use for one and two in other directions
+
+                    if (gameRenderer.getGhostsInner().get(i).getY() >= 24 || gameRenderer.getGhostsInner().get(i).getY() < 5) {
+                        counterLeft3 = 1;
+                        counterLeft4 = 1;
+                    }
+
+                    // this will turn into counterDown left, counterDown2 right
+                    // have to also test for greater than less than getx +- something
+
+
+//                    if (downAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getY() < 27) {
+//                        //System.out.println("Overlaps!");
+//                        // down
+//
+//                        counterLeft++;
+//                    }
+//                    if (downAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getY() > 3) {
+//                        //System.out.println("Overlaps!");
+//                        // up
+//
+//                        counterLeft2++;
+//                    }
+
+                    if (downAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getY() > 3) {
+                        //System.out.println("Overlaps!");
+                        // down
+                        System.out.println("hit");
+
+                        counterLeft++;
+                        System.out.println(counterRight);
+                        System.out.println("Print1" + gameRenderer.getHorizontalWalls().get(h).getY());
+                    }
+//
+                    if (upAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getY() < 27) {
+                        //System.out.println("Overlaps!");
+                        // up
+
+                        System.out.println("Print2" + gameRenderer.getHorizontalWalls().get(h).getY());
+
+                        counterLeft2++;
+                    }
+//
+//                    if (downAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getX() > 6 && ghostInner.getX() + .5 > gameRenderer.getHorizontalWalls().get(h).getX()) {
+//                        // keep straight
+//
+//                        counterLeft3++;
+//                    } else if (downAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getX() < GameConfig.WORLD_WIDTH - 17) {
+//                        // don't do shit, but would turn back
+//
+//                        counterLeft4++;
+//                    }
+
+
+                }
+
+                if (counterLeft >= 1) {
+                  //  canMoveLeft = true;
+
+                    stayStraight = true;
+//                    gameRenderer.getGhosts().get(i).setDirection(3);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(3);
+                } else {
+
+                    canMoveDown = true;
+//                    gameRenderer.getGhosts().get(i).setDirection(2);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(2);
+
+                }
+
+                if (counterLeft2 >= 1) {
+                  //  canMoveLeft = true;
+
+                    stayStraight = true;
+//                    gameRenderer.getGhosts().get(i).setDirection(3);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(3);
+                } else {
+
+                    canMoveUp = true;
+//                    gameRenderer.getGhosts().get(i).setDirection(4);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(4);
+                }
+
+//                if (counterLeft3 >= 1) {
+//
+//                } else {
+//
+//                    canMoveLeft = true;
+//                }
+//
+//                if (counterLeft4 >= 1) {
+//
+//                } else {
+//                    canMoveRight = true;
+//                }
+
+//                if (gameRenderer.getGhostsInner().get(i).getX() < 6 || gameRenderer.getGhostsInner().get(i).getX() >= GameConfig.WORLD_WIDTH - 19) {
+//                    counterLeft = 1;
+//                    counterLeft2 = 1;
+//                    canMoveDown = false;
+//                    canMoveUp = false;
+//                }
+//
+//                if (gameRenderer.getGhostsInner().get(i).getY() >= 24 || gameRenderer.getGhostsInner().get(i).getY() < 5) {
+//                    counterLeft3 = 1;
+//                    counterLeft4 = 1;
+//                    canMoveLeft = false;
+//                    canMoveRight = false;
+//                }
+
+
+
+//                if (canMoveDown) {
+//                    gameRenderer.getGhosts().get(i).setDirection(2);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(2);
+//                }
+//                if (canMoveUp) {
+//                    gameRenderer.getGhosts().get(i).setDirection(4);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(4);
+//                }
+//
+//                if (stayStraight) {
+//                    gameRenderer.getGhosts().get(i).setDirection(3);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(3);
+//                }
+
+
+                counterLeft = 0;
+
+                counterLeft2 = 0;
+
+                counterLeft3 = 0;
+
+                counterLeft4 = 0;
+
+                stayStraight = false;
+                canMoveRight = false;
+                canMoveDown = false;
+                canMoveUp = false;
+                canMoveLeft = false;
+
+//                if (canMoveDown) {
+//                    gameRenderer.getGhosts().get(i).setDirection(2);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(2);
+//                } else if (canMoveUp) {
+//                    gameRenderer.getGhosts().get(i).setDirection(4);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(4);
+//                } else {
+//                    gameRenderer.getGhosts().get(i).setDirection(3);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(3);
+//                }
+
+//                if(canMoveDown && pac.getY() < ghostInner.getY()){
+//                    gameRenderer.getGhosts().get(i).setDirection(2);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(2);
+//                } else if(canMoveUp && pac.getY() > ghostInner.getY()){
+//                    gameRenderer.getGhosts().get(i).setDirection(4);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(4);
+//                } else if(canMoveRight && pac.getX() > ghostInner.getX()){
+//                    gameRenderer.getGhosts().get(i).setDirection(1);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(1);
+//                } else if(canMoveLeft && pac.getX() < ghostInner.getX()){
+//                    gameRenderer.getGhosts().get(i).setDirection(3);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(3);
+//                }
+
+
+            }
+
+            if (gameRenderer.getGhosts().get(i).getDirection() == 4) {
+                float x = ghost.getX();
+                float y = ghost.getY();
+                ghost.setPosition(x, y += delta * 5);
+                ghostInner.setPosition(ghost.getX() + ghostInner.getWidth() / 2, ghost.getY() + ghostInner.getHeight() / 2);
+
+                LeftAntena leftAntena = new LeftAntena();
+                leftAntena.setPosition(ghostInner.getX() - ghost.getWidth(), ghostInner.getY());
+                leftAntena.setSize(3, 1);
+                ghost.setLeftAntena(leftAntena);
+
+                RightAntena rightAntena = new RightAntena();
+                rightAntena.setPosition(ghostInner.getX(), ghostInner.getY());
+                rightAntena.setSize(3, 1);
+                ghost.setRightAntena(rightAntena);
+
+
+                DownAntena downAntena = new DownAntena();
+                downAntena.setPosition(ghostInner.getX(), ghostInner.getY() - ghostInner.getHeight() * 2);
+                downAntena.setSize(1, 5);
+                ghost.setDownAntena(downAntena);
+
+
+                renderer.rect(leftAntena.getX(), leftAntena.getY(), leftAntena.getWidth(), leftAntena.getHeight());
+                renderer.rect(rightAntena.getX(), rightAntena.getY(), rightAntena.getWidth(), rightAntena.getHeight());
+
+                for (int h = 0; h < gameRenderer.getHorizontalWalls().size - 1; h++) {
+                    boolean isOverlaps = gameRenderer.getHorizontalWalls().get(h).getBounds().overlaps(ghostInner.getBounds());
+                    boolean isToLeft = ghostInner.getX() < gameRenderer.getHorizontalWalls().get(h).getX();
+
+                    if (ghostInner.getY() > 25) {
+
+                        float random = MathUtils.random(1, 4);
+                        gameRenderer.getGhosts().get(i).setDirection(random);
+                        gameRenderer.getGhostsInner().get(i).setDirection(random);
+
+
+                    }
+//                    if (gameRenderer.getGhostsInner().get(i).getY() < 5) {
+//                        counterUp = 1;
+//                        counterUp2 = 1;
+//                    }
+
+                    if (gameRenderer.getGhostsInner().get(i).getX() < 7 || gameRenderer.getGhostsInner().get(i).getX() > GameConfig.WORLD_WIDTH - 15) {
+                        counterUp3 = 1;
+                        counterUp4 = 1;
+
+                    }
+
+                    // if greater than or less than set others equal to one, otherwise it will just keep going back and forth
+
+                    if (gameRenderer.getGhostsInner().get(i).getY() >= 24 || gameRenderer.getGhostsInner().get(i).getY() < 5) {
+                        counterUp = 1;
+                        counterUp2 = 1;
+                    }
+
+                    // this will turn into counterDown left, counterDown2 right
+                    // have to also test for greater than less than getx +- something
+
+
+                    if (leftAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getX() < GameConfig.WORLD_WIDTH - 16) {
+                        //System.out.println("Overlaps!");
+                        // left
+                        counterUp++;
+                    }
+                    if (rightAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getX() > 5) {
+                        //System.out.println("Overlaps!");
+                        // right
+                        counterUp2++;
+                    }
+
+
+                    if (leftAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getY() <= 24 && ghostInner.getY() < gameRenderer.getHorizontalWalls().get(h).getX()) {
+                        //System.out.println("Overlaps!");
+                        // keep straight
+                        counterUp3++;
+                    } else if (leftAntena.getBounds().overlaps(gameRenderer.getHorizontalWalls().get(h).getBounds()) && gameRenderer.getHorizontalWalls().get(h).getY() > 5) {
+                        //System.out.println("Overlaps!");
+                        // down, but don't do shit
+                        counterUp4++;
+                    }
+
+
+                }
+
+                if (counterUp >= 1) {
+                    stayStraight = true;
+                } else {
+                    // boolean canMove here then control flow at end of entire method that will change direction
+                    canMoveLeft = true;
+
+
+                }
+
+                if (counterUp2 >= 1) {
+                    stayStraight = true;
+                } else {
+
+                    canMoveRight = true;
+
+                }
+
+//                if (counterUp3 >= 1) {
+//
+//                } else {
+//                    // boolean canMove here then control flow at end of entire method that will change direction
+//
+//
+//                    canMoveUp = true;
+//
+//                }
+//
+//                if (counterUp4 >= 1) {
+//
+//                } else {
+//                    canMoveDown = true;
+//
+//                }
+
+                if (canMoveLeft) {
+                    gameRenderer.getGhosts().get(i).setDirection(3);
+                    gameRenderer.getGhostsInner().get(i).setDirection(3);
+                }
+                if (canMoveRight) {
+                    gameRenderer.getGhosts().get(i).setDirection(1);
+                    gameRenderer.getGhostsInner().get(i).setDirection(1);
+                }
+                if (stayStraight) {
+                    gameRenderer.getGhosts().get(i).setDirection(4);
+                    gameRenderer.getGhostsInner().get(i).setDirection(4);
+                }
+
+
+                counterUp = 0;
+
+                counterUp2 = 0;
+
+                counterUp3 = 0;
+
+                counterUp4 = 0;
+
+                stayStraight = false;
+                canMoveRight = false;
+                canMoveDown = false;
+                canMoveUp = false;
+                canMoveLeft = false;
+//
+//                if(canMoveDown && pac.getY() < ghostInner.getY()){
+//                    gameRenderer.getGhosts().get(i).setDirection(2);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(2);
+//                } else if(canMoveUp && pac.getY() > ghostInner.getY()){
+//                    gameRenderer.getGhosts().get(i).setDirection(4);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(4);
+//                } else if(canMoveRight && pac.getX() > ghostInner.getX()){
+//                    gameRenderer.getGhosts().get(i).setDirection(1);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(1);
+//                } else if(canMoveLeft && pac.getX() < ghostInner.getX()){
+//                    gameRenderer.getGhosts().get(i).setDirection(3);
+//                    gameRenderer.getGhostsInner().get(i).setDirection(3);
+//                }
+
+
+            }
+
+            // erase the previous set directions and put this block of code in each direction at the end
+
+//            if(canMoveDown && pac.getY() < ghostInner.getY()){
+//                gameRenderer.getGhosts().get(i).setDirection(2);
+//                gameRenderer.getGhostsInner().get(i).setDirection(2);
+//            } else if(canMoveUp && pac.getY() > ghostInner.getY()){
+//                gameRenderer.getGhosts().get(i).setDirection(4);
+//                gameRenderer.getGhostsInner().get(i).setDirection(4);
+//            } else if(canMoveRight && pac.getX() > ghostInner.getX()){
+//                gameRenderer.getGhosts().get(i).setDirection(1);
+//                gameRenderer.getGhostsInner().get(i).setDirection(1);
+//            } else if(canMoveLeft && pac.getX() < ghostInner.getX()){
+//                gameRenderer.getGhosts().get(i).setDirection(3);
+//                gameRenderer.getGhostsInner().get(i).setDirection(3);
+//            }
+
+            if (ghostInner.getY() >= 27) {
+                gameRenderer.getGhosts().get(i).setDirection(2);
+                gameRenderer.getGhostsInner().get(i).setDirection(2);
+            } else if (ghostInner.getY() <= 3) {
+                gameRenderer.getGhosts().get(i).setDirection(4);
+                gameRenderer.getGhostsInner().get(i).setDirection(4);
+            } else if (ghostInner.getX() >= GameConfig.WORLD_WIDTH - 17) {
+                gameRenderer.getGhosts().get(i).setDirection(3);
+                gameRenderer.getGhostsInner().get(i).setDirection(3);
+            } else if (ghostInner.getX() <= 5) {
+                gameRenderer.getGhosts().get(i).setDirection(1);
+                gameRenderer.getGhostsInner().get(i).setDirection(1);
+            }
+
+        }
+//        for (int i = 0; i < gameRenderer.getGhostsInner().size(); i++) {
+//            ghostInner = gameRenderer.getGhostsInner().get(i);
+//            ghostInner.setPosition(ghost.getX() + ghostInner.getWidth() / 2, ghost.getY() + ghostInner.getHeight() / 2);
+//        }
+
+    }
+}

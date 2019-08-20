@@ -1,0 +1,5 @@
+{
+  "flattenPaths" : "true",
+  "combineSubdirectories" : "true",
+  "debug" : "false"
+}
